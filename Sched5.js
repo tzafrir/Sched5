@@ -5,14 +5,16 @@
  *
  * @param {string} dbName A name for this instance. Sched5 will use a database by this name.
  * @param {function(Object)} scheduledCallback A function to run on an object at the scheduled time.
- * @param {function(Object[])} missCallback A function to run on an array of objects that were not
- *    run on their scheduled time.
+ * @param {function(Object)} missCallback A function to run on an object that was not run on
+ *     its scheduled time.
  */
 Sched5 = function(dbName, scheduledCallback, missCallback) {
   this._dbName = dbName;
   this._scheduledCallback = scheduledCallback;
   this._missCallback = missCallback;
+  this._expiredTasks = {};
   this.STORE_NAME = "scheduledItems";
+  this.INTERVAL = 5000;
 }
 
 /**
@@ -21,9 +23,15 @@ Sched5 = function(dbName, scheduledCallback, missCallback) {
  * @param {function(boolean)} callback Success/failure callback.
  */
 Sched5.prototype.init = function(callback) {
-  this._initDb(callback);
-  this.handleMisses();
-  this.startPolling();
+  var self = this;
+  this._initDb(function(success) {
+    if (success) {
+      self._handleMisses();
+      self._startPolling();
+    }
+    callback(success);
+  });
+
 }
 
 /**
@@ -105,7 +113,7 @@ Sched5.prototype._processAllItemsBefore = function(timeStamp, callback) {
     if(!result) {
       return;
     }
-    callback(result.value.timeStamp);
+    callback(result.value);
     result.continue();
   };
 }
@@ -132,11 +140,37 @@ Sched5.prototype._onError =  function(callback) {
   };
 }
 
-// TODO:
+Sched5.prototype._handleMisses = function() {
+  var self = this;
+  this._runAndRemove(function(value) {
+    self._expiredTasks[value.timeStamp] = true;
+    self._missCallback(value.item);
+  });
+}
 
-Sched5.prototype.handleMisses = function(){}
-Sched5.prototype.startPolling = function(){}
+Sched5.prototype._startPolling = function() {
+  var self = this;
+  var f = function() {
+    self._runAndRemove(function(value) {
+      // Workaround for concurrency issue with IndexedDB transactions. Handles the situation where
+      // there are expired tasks with a pending delete request that wasn't run yet.
+      if (!self._expiredTasks[value.key]) {
+        self._scheduledCallback(value.item);
+      } else {
+        console.log('expired ' + value.timeStamp);
+      }
+    });
+    window.setTimeout(f, self.INTERVAL);
+  }
 
-function c(e){console.log(e)};
-s = new Sched5("Tzaf", c, c);
-s.init(c);
+  // Take a break so the delete transactions start queuing.
+  window.setTimeout(f, 3000);
+}
+
+Sched5.prototype._runAndRemove = function(func) {
+  var self = this;
+  this._processAllItemsBefore(new Date().getTime(), function(value) {
+    self._removeItem(value.timeStamp, function(){});
+    func(value);
+  });
+}
