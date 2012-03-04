@@ -69,14 +69,15 @@ Sched5.prototype._initDb = function(callback) {
       console.error(event.target.errorCode);
     };
 
-    var v = "1.0";
+    var v = "1.1";
     if (v != db.version) {
       var setVrequest = db.setVersion(v);
 
-      setVrequest.onfailure = this._onError(callback);
+      setVrequest.onfailure = self._onError(callback);
       setVrequest.onsuccess = function(e) {
-        var store = db.createObjectStore(this.STORE_NAME,
-          {keyPath: "timeStamp"});
+        if (!db.objectStoreNames.contains(self.STORE_NAME)) {
+          db.createObjectStore(self.STORE_NAME, {keyPath: "timeStamp"});
+        }
         callback(true);
       };
     } else {
@@ -104,9 +105,19 @@ Sched5.prototype._processAllItemsBefore = function(timeStamp, callback) {
     if(!result) {
       return;
     }
-    callback(item);
+    callback(result.value.timeStamp);
     result.continue();
   };
+}
+
+Sched5.prototype._removeItem = function(key, callback) {
+  var db = this._db;
+  var trans = db.transaction([this.STORE_NAME], IDBTransaction.READ_WRITE);
+  var store = trans.objectStore(this.STORE_NAME);
+  var request = store.delete(key);
+
+  request.onsuccess = this._onSuccess(callback);
+  request.onerror = this._onError(callback);
 }
 
 Sched5.prototype._onSuccess = function(callback) {
@@ -125,3 +136,7 @@ Sched5.prototype._onError =  function(callback) {
 
 Sched5.prototype.handleMisses = function(){}
 Sched5.prototype.startPolling = function(){}
+
+function c(e){console.log(e)};
+s = new Sched5("Tzaf", c, c);
+s.init(c);
