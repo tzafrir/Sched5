@@ -61,7 +61,9 @@ Sched5.prototype.schedule = function(item, timeStamp, callback) {
  */
 Sched5.prototype.processAllItems = function(callback) {
   var keyRange = IDBKeyRange.lowerBound(0);
-  this._processAllItemsByRange(keyRange, callback);
+  this._processAllItemsByRange(keyRange, function(itemContainer){
+    callback(itemContainer.item);
+  });
 }
 
 Sched5.prototype._initDb = function(callback) {
