@@ -15,7 +15,7 @@ Sched5 = function(dbName, scheduledCallback, missCallback) {
   this._expiredTasks = {};
   this.STORE_NAME = "scheduledItems";
   this.INTERVAL = 5000;
-}
+};
 
 /**
  * Initialize the scheduler.
@@ -32,7 +32,7 @@ Sched5.prototype.init = function(callback) {
     callback(success);
   });
 
-}
+};
 
 /**
  * Adds an item to the scheduler. The scheduler will run scheduledCallback on item at timeStamp.
@@ -52,6 +52,16 @@ Sched5.prototype.schedule = function(item, timeStamp, callback) {
 
   request.onsuccess = this._onSuccess(callback);
   request.onerror = this._onError(callback);
+}
+
+/**
+ * Run callback on every scheduled item.
+ *
+ * @param {Function(Object)} callback The callback to be run.
+ */
+Sched5.prototype.processAllItems = function(callback) {
+  var keyRange = IDBKeyRange.lowerBound(0);
+  this._processAllItemsByRange(keyRange, callback);
 }
 
 Sched5.prototype._initDb = function(callback) {
@@ -100,12 +110,11 @@ function fail(callback, message) {
   console.error(message);
 }
 
-Sched5.prototype._processAllItemsBefore = function(timeStamp, callback) {
+Sched5.prototype._processAllItemsByRange = function(keyRange, callback) {
   var db = this._db;
   var trans = db.transaction([this.STORE_NAME], IDBTransaction.READ_ONLY);
   var store = trans.objectStore(this.STORE_NAME);
 
-  var keyRange = IDBKeyRange.upperBound(timeStamp);
   var cursorRequest = store.openCursor(keyRange);
 
   cursorRequest.onsuccess = function(e) {
@@ -116,6 +125,11 @@ Sched5.prototype._processAllItemsBefore = function(timeStamp, callback) {
     callback(result.value);
     result.continue();
   };
+}
+
+Sched5.prototype._processAllItemsBefore = function(timeStamp, callback) {
+  var keyRange = IDBKeyRange.upperBound(timeStamp);
+  this._processAllItemsByRange(keyRange, callback);
 }
 
 Sched5.prototype._removeItem = function(key, callback) {
