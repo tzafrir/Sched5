@@ -107,16 +107,19 @@ Sched5.prototype._initDb = function(callback) {
   request.onerror = this._onError(callback);
 }
 
-Sched5.prototype._fail(callback, message) {
+Sched5.prototype._fail = function(callback, message) {
   callback(false);
   console.error(message);
 }
 
-Sched5.prototype._processAllContainersByRange = function(keyRange, callback) {
+Sched5.prototype._getItemStore = function() {
   var db = this._db;
   var trans = db.transaction([this.STORE_NAME], IDBTransaction.READ_ONLY);
-  var store = trans.objectStore(this.STORE_NAME);
+  return trans.objectStore(this.STORE_NAME);
+}
 
+Sched5.prototype._processAllContainersByRange = function(keyRange, callback) {
+  var store = this._getItemStore();
   var cursorRequest = store.openCursor(keyRange);
 
   cursorRequest.onsuccess = function(e) {
