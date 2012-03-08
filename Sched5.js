@@ -66,6 +66,23 @@ Sched5.prototype.processAllItems = function(callback) {
   });
 }
 
+/**
+ * Count how many items are in the database.
+ *
+ * @param {Function(Number)} callback.
+ */
+Sched5.prototype.count = function(callback) {
+  var store = this._getItemStore();
+  var countRequest = store.count(IDBKeyRange.lowerBound(0));
+  countRequest.onsuccess = function(e) {
+    var result = e.target.result;
+    if (!result) {
+      return;
+    }
+    callback(result);
+  };
+}
+
 Sched5.prototype._initDb = function(callback) {
   // Only Chrome is supported officially. Chrome's indexedDB implementation is a bit different than
   // other browsers', pull requests to handle multi browser are welcome.
