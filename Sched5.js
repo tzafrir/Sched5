@@ -75,13 +75,21 @@ Sched5.prototype.count = function(callback) {
   var store = this._getItemStore();
   var countRequest = store.count(IDBKeyRange.lowerBound(0));
   countRequest.onsuccess = function(e) {
-    console.log(e);
     var result = e.target.result;
     if (result != 0 && !result) {
       return;
     }
     callback(result);
   };
+}
+
+/**
+ * Process a single item in the scheduler.
+ */
+Sched5.prototype.processItem = function(timeStamp, callback) {
+  this._processAllContainersByRange(IDBKeyRange.only(timeStamp), function(container) {
+    callback(container.item);
+  });
 }
 
 Sched5.prototype._initDb = function(callback) {
