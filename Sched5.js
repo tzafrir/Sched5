@@ -50,13 +50,12 @@ Sched5.prototype.init = function(callback) {
 Sched5.prototype.schedule = function(item, timeStamp, callback) {
   var db = this._db;
   var trans = db.transaction([this.STORE_NAME], IDBTransaction.READ_WRITE);
-  this._cacheExpired = true;
   var store = trans.objectStore(this.STORE_NAME);
   var container = {"item": item};
   container[this.TIMESTAMP_KEYPATH] = timeStamp;
   var request = store.put(container);
 
-  request.onsuccess = this._onSuccess(callback);
+  request.onsuccess = this._onWriteSuccess(callback);
   request.onerror = this._onError(callback);
 }
 
@@ -190,12 +189,19 @@ Sched5.prototype._processAllContainersBefore = function(timeStamp, callback) {
 Sched5.prototype._removeItem = function(key, callback) {
   var db = this._db;
   var trans = db.transaction([this.STORE_NAME], IDBTransaction.READ_WRITE);
-  this._cacheExpired = true;
   var store = trans.objectStore(this.STORE_NAME);
   var request = store.delete(key);
 
-  request.onsuccess = this._onSuccess(callback);
+  request.onsuccess = this._onWriteSuccess(callback);
   request.onerror = this._onError(callback);
+}
+
+Sched5.prototype._onWriteSuccess = function(callback) {
+  var self = this;
+  return function(event) {
+    self._cacheExpired = true;
+    self._onSuccess(callback)();
+  }
 }
 
 Sched5.prototype._onSuccess = function(callback) {
