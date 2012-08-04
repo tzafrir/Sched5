@@ -32,7 +32,9 @@ Sched5.prototype.init = function(callback) {
   var self = this;
   this._initDb(function(success) {
     if (success) {
-      self._handleMisses();
+      window.setTimeout(function() {
+        self._handleMisses();
+      }, 1);
       self._startPolling();
     }
     callback(success);
@@ -218,7 +220,7 @@ Sched5.prototype._onError =  function(callback) {
 
 Sched5.prototype._handleMisses = function() {
   var self = this;
-  this._runAndRemove(function(value) {
+  self._runAndRemove(function(value) {
     self._expiredTasks[value.timeStamp] = true;
     self._missCallback(value.item);
   });
