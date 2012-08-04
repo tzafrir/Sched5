@@ -49,7 +49,7 @@ Sched5.prototype.init = function(callback) {
  */
 Sched5.prototype.schedule = function(item, timeStamp, callback) {
   var db = this._db;
-  var trans = db.transaction([this.STORE_NAME], IDBTransaction.READ_WRITE);
+  var trans = db.transaction([this.STORE_NAME], 'readwrite');
   var store = trans.objectStore(this.STORE_NAME);
   var container = {"item": item};
   container[this.TIMESTAMP_KEYPATH] = timeStamp;
@@ -163,7 +163,7 @@ Sched5.prototype._fail = function(callback, message) {
 
 Sched5.prototype._getItemStore = function() {
   var db = this._db;
-  var trans = db.transaction([this.STORE_NAME], IDBTransaction.READ_ONLY);
+  var trans = db.transaction([this.STORE_NAME], 'readonly');
   return trans.objectStore(this.STORE_NAME);
 }
 
@@ -188,7 +188,7 @@ Sched5.prototype._processAllContainersBefore = function(timeStamp, callback) {
 
 Sched5.prototype._removeItem = function(key, callback) {
   var db = this._db;
-  var trans = db.transaction([this.STORE_NAME], IDBTransaction.READ_WRITE);
+  var trans = db.transaction([this.STORE_NAME], 'readwrite');
   var store = trans.objectStore(this.STORE_NAME);
   var request = store.delete(key);
 
