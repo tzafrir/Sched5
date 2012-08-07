@@ -34,8 +34,8 @@ Sched5.prototype.init = function(callback) {
     if (success) {
       window.setTimeout(function() {
         self._handleMisses();
-      }, 1);
-      self._startPolling();
+        self._startPolling();
+      }, 1000);
     }
     callback(success);
   });
